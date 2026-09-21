@@ -1,0 +1,6 @@
+{
+  "name": "Voxify - AI Voice Studio",
+  "description": "Professional AI voice generator and text-to-speech studio with multi-voice dialogue, SSML pause tags, VoxFX audio mastering, and flexible pricing plans.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

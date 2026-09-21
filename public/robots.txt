@@ -1,0 +1,6 @@
+# Voxify AI Robots.txt - Search Engine Crawler Directives
+User-agent: *
+Allow: /
+
+# Canonical Sitemap Reference for Googlebot, Bingbot & DuckDuckBot
+Sitemap: /sitemap.xml

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="voxBg" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#2563eb" />
+      <stop offset="50%" stopColor="#4f46e5" />
+      <stop offset="100%" stopColor="#7c3aed" />
+    </linearGradient>
+  </defs>
+  <!-- Clean vibrant rounded squircle background (no dark/black box) -->
+  <rect width="48" height="48" rx="13" fill="url(#voxBg)"/>
+  <!-- Energetic V-shaped audio waveform in crisp white and cyan -->
+  <rect x="8" y="10" width="4.5" height="18" rx="2.25" fill="#ffffff" fill-opacity="0.88"/>
+  <rect x="16.5" y="18" width="4.5" height="18" rx="2.25" fill="#ffffff" fill-opacity="0.95"/>
+  <rect x="25" y="24" width="4.5" height="18" rx="2.25" fill="#67e8f9"/>
+  <rect x="33.5" y="18" width="4.5" height="18" rx="2.25" fill="#ffffff" fill-opacity="0.95"/>
+  <rect x="42" y="10" width="4.5" height="18" rx="2.25" fill="#ffffff" fill-opacity="0.88"/>
+</svg>

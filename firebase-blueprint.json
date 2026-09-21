@@ -1,0 +1,93 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Registered VoiceMaker client profile and voice credit balance",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique Firebase Auth UID of the user"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User's email address"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User's full name or client alias"
+        },
+        "plan": {
+          "type": "string",
+          "enum": ["Free", "Creator", "Pro", "Enterprise"],
+          "description": "Subscription tier of the client"
+        },
+        "credits": {
+          "type": "number",
+          "description": "Current available voice character credits"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["client", "admin"],
+          "description": "Access role for the client user"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of account registration"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of latest account update"
+        }
+      },
+      "required": ["id", "email", "displayName", "plan", "credits", "createdAt"]
+    },
+    "UserAudioTake": {
+      "title": "UserAudioTake",
+      "description": "Saved synthesized audio take belonging to a user",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the take"
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the user who generated this audio"
+        },
+        "text": {
+          "type": "string",
+          "description": "Synthesized text content"
+        },
+        "voice": {
+          "type": "string",
+          "description": "Voice identifier used"
+        },
+        "style": {
+          "type": "string",
+          "description": "Voice style applied"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Duration in seconds"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of generation"
+        }
+      },
+      "required": ["id", "userId", "text", "voice", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Stores user profiles keyed by their Firebase Auth UID"
+    },
+    "/users/{userId}/takes/{takeId}": {
+      "schema": "UserAudioTake",
+      "description": "Audio clips and takes saved in the user's library"
+    }
+  }
+}
