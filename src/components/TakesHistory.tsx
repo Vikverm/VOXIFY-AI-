@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from "react";
-import { History, Play, Trash2, Download, Clock, Star, Filter, Search } from "lucide-react";
+import { History, Play, Trash2, Download, Clock, Star, Filter, Search, AlertTriangle, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { AudioTake } from "../types";
 import { downloadWavFile, formatTime } from "../utils/audio";
@@ -28,6 +28,7 @@ export const TakesHistory: React.FC<TakesHistoryProps> = ({
 }) => {
   const [filterFavorites, setFilterFavorites] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   if (takes.length === 0) {
     return (
@@ -99,16 +100,65 @@ export const TakesHistory: React.FC<TakesHistoryProps> = ({
           <motion.button
             type="button"
             id="clear-all-takes-btn"
-            onClick={onClearHistory}
+            onClick={() => setShowClearConfirm(true)}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition cursor-pointer"
+            className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition cursor-pointer font-medium border border-rose-200/60"
+            title="Clear all voice takes from archive"
           >
             <Trash2 className="h-3 w-3" />
             <span>Clear</span>
           </motion.button>
         </div>
       </div>
+
+      {/* Confirmation Modal for Clearing Library */}
+      <AnimatePresence>
+        {showClearConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl border border-slate-200 space-y-4"
+            >
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-slate-900">Clear Library History?</h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    This will permanently delete all <strong className="text-slate-800">{takes.length} voice takes</strong> from your local library archive. This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowClearConfirm(false)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  id="confirm-clear-library-btn"
+                  onClick={() => {
+                    setShowClearConfirm(false);
+                    onClearHistory();
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Yes, Clear All</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Search Bar if takes >= 3 */}
       {takes.length >= 3 && (

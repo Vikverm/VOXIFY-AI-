@@ -25,6 +25,8 @@ import {
   Plus,
   Check,
   RotateCcw,
+  ArrowDown,
+  ArrowRight,
 } from "lucide-react";
 import JSZip from "jszip";
 import { VoiceOption, StyleOption, PitchLevel, SpeedLevel } from "../types";
@@ -94,6 +96,29 @@ export interface BatchItem {
   duration?: number;
 }
 
+const DEFAULT_FALLBACK_STYLES: StyleOption[] = [
+  { id: "natural", name: "Natural & Conversational", prompt: "Speak naturally and conversationally" },
+  { id: "cheerful", name: "Cheerful & Upbeat", prompt: "Speak with cheerful enthusiasm and warm energy" },
+  { id: "calm", name: "Calm & Meditative", prompt: "Speak slowly, peacefully, with a gentle and soothing cadence" },
+  { id: "dramatic", name: "Dramatic & Storyteller", prompt: "Speak with dramatic emotional depth and narrative tension" },
+  { id: "professional", name: "Professional & Articulate", prompt: "Speak clearly, authoritatively, and with polished newsroom articulation" },
+  { id: "whisper", name: "Soft & Intimate", prompt: "Speak in a soft, gentle, intimate tone" },
+];
+
+function getVoiceGenderCategory(genderStr: string = ""): "Female" | "Male" | "Neutral" {
+  const lower = genderStr.toLowerCase();
+  if (lower.includes("female")) return "Female";
+  if (lower.includes("male")) return "Male";
+  return "Neutral";
+}
+
+function getVoiceToneSummary(tone: string = ""): string {
+  if (!tone) return "";
+  const parts = tone.split(",").map((p) => p.trim()).filter(Boolean);
+  if (parts.length <= 2) return parts.join(", ");
+  return `${parts[0]}, ${parts[1]}`;
+}
+
 interface BatchConverterProps {
   voices: VoiceOption[];
   styles?: StyleOption[];
@@ -115,8 +140,27 @@ export const BatchConverter: React.FC<BatchConverterProps> = ({
   onDeductCredits,
   onAddTake,
 }) => {
+  const availableStyles = useMemo(() => {
+    return styles && styles.length > 0 ? styles : DEFAULT_FALLBACK_STYLES;
+  }, [styles]);
+
   const activeVoice = propSelectedVoice || defaultVoice || (voices[0]?.id ?? "Kore");
-  const activeStyle = propSelectedStyle || (styles?.[0]?.id ?? "natural");
+  const activeStyle = propSelectedStyle || (availableStyles[0]?.id ?? "natural");
+
+  const groupedVoices = useMemo(() => {
+    const female: VoiceOption[] = [];
+    const male: VoiceOption[] = [];
+    const neutral: VoiceOption[] = [];
+
+    voices.forEach((v) => {
+      const cat = getVoiceGenderCategory(v.gender);
+      if (cat === "Female") female.push(v);
+      else if (cat === "Male") male.push(v);
+      else neutral.push(v);
+    });
+
+    return { female, male, neutral };
+  }, [voices]);
 
   const [rawText, setRawText] = useState(
     `Welcome to the Voxify Batch Audio Engine.\nConvert multiple paragraphs or lines in parallel with studio quality.\nEach segment can be assigned custom voices and exported as a ZIP archive.\nExport individual stems or concatenate all items into a single audiobook track.`
@@ -166,13 +210,49 @@ export const BatchConverter: React.FC<BatchConverterProps> = ({
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const currentSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const [bulkVoiceTarget, setBulkVoiceTarget] = useState(activeVoice);
+  const [bulkStyleTarget, setBulkStyleTarget] = useState(activeStyle);
+
+  const renderVoiceOptions = () => (
+    <>
+      {groupedVoices.female.length > 0 && (
+        <optgroup label="👩 Female Voices">
+          {groupedVoices.female.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.name} • Female ({getVoiceToneSummary(v.tone)})
+            </option>
+          ))}
+        </optgroup>
+      )}
+      {groupedVoices.male.length > 0 && (
+        <optgroup label="👨 Male Voices">
+          {groupedVoices.male.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.name} • Male ({getVoiceToneSummary(v.tone)})
+            </option>
+          ))}
+        </optgroup>
+      )}
+      {groupedVoices.neutral.length > 0 && (
+        <optgroup label="✨ Neutral & Playful Voices">
+          {groupedVoices.neutral.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.name} • {v.gender} ({getVoiceToneSummary(v.tone)})
+            </option>
+          ))}
+        </optgroup>
+      )}
+    </>
+  );
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const segmentsListRef = useRef<HTMLDivElement | null>(null);
 
   // Live counts for detected segments by mode
   const lineCount = useMemo(() => splitTextIntoSegments(rawText, "lines").length, [rawText]);
   const sentenceCount = useMemo(() => splitTextIntoSegments(rawText, "sentences").length, [rawText]);
   const paragraphCount = useMemo(() => splitTextIntoSegments(rawText, "paragraphs").length, [rawText]);
+  const detectedCount =
+    splitMode === "sentences" ? sentenceCount : splitMode === "lines" ? lineCount : paragraphCount;
 
   // Split raw text into chunks
   const handleSplitText = (modeOverride?: SplitMode) => {
@@ -470,6 +550,10 @@ ivr_menu.wav,Zephyr,"All of our agents are currently assisting other callers.",c
     setItems((prev) => prev.map((it) => ({ ...it, voice: vId, status: it.status === "ready" ? "idle" : it.status })));
   };
 
+  const handleSetAllStyles = (sId: string) => {
+    setItems((prev) => prev.map((it) => ({ ...it, style: sId, status: it.status === "ready" ? "idle" : it.status })));
+  };
+
   const completedCount = items.filter((i) => i.status === "ready").length;
 
   return (
@@ -535,19 +619,24 @@ ivr_menu.wav,Zephyr,"All of our agents are currently assisting other callers.",c
       </div>
 
       {/* Input Splitter Box */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3.5">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div>
-            <label className="text-xs font-bold text-slate-800 block">
-              Paste Multi-Line Text, Screenplay, or Dialogue:
-            </label>
-            <span className="text-[11px] text-slate-400">
-              Split long scripts into separate audio lines with dedicated voices and individual downloads.
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-600 text-xs font-bold text-white shadow-2xs">
+              1
             </span>
+            <div>
+              <label className="text-xs font-bold text-slate-900 block">
+                Step 1: Write or Paste Your Text
+              </label>
+              <span className="text-[11px] text-slate-500">
+                Type lines or dialogue, then click the purple button below to create audio clips.
+              </span>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-semibold text-slate-500">Split by:</span>
+            <span className="text-[11px] font-semibold text-slate-500">Break into clips by:</span>
             <div className="inline-flex rounded-xl bg-slate-100 p-1 text-xs font-semibold">
               <button
                 type="button"
@@ -615,37 +704,96 @@ ivr_menu.wav,Zephyr,"All of our agents are currently assisting other callers.",c
                 </span>
               </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => handleSplitText()}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition cursor-pointer shadow-xs active:scale-95"
-            >
-              <Split className="h-3.5 w-3.5 text-purple-300" />
-              <span>Split Text</span>
-            </button>
           </div>
         </div>
 
-        <textarea
-          rows={4}
-          value={rawText}
-          onChange={(e) => setRawText(e.target.value)}
-          placeholder="Paste multiple lines of text, game dialogue, or chapters..."
-          className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-xs text-slate-800 focus:bg-white focus:border-purple-600 focus:outline-none transition resize-y font-mono leading-relaxed"
-        />
+        <div className="relative">
+          <textarea
+            rows={4}
+            value={rawText}
+            onChange={(e) => setRawText(e.target.value)}
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                e.preventDefault();
+                handleSplitText();
+                setTimeout(() => {
+                  segmentsListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }, 50);
+              }
+            }}
+            placeholder="Type or paste your text here (e.g., dialogue lines, book chapter, podcast script)... Once typed, click 'Create Audio Clips' below to choose voices and generate!"
+            className="w-full rounded-xl border border-slate-300 bg-slate-50/50 p-3.5 text-xs text-slate-800 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 focus:outline-none transition resize-y font-mono leading-relaxed shadow-inner"
+          />
+        </div>
+
+        {/* Clear Next Step Call-To-Action Box */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-gradient-to-r from-purple-50 via-indigo-50/60 to-purple-50 border-2 border-purple-200/80 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-600 text-white shadow-2xs">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-900">
+                {rawText.trim()
+                  ? `Ready: ${detectedCount} ${detectedCount === 1 ? "voice clip" : "voice clips"} detected`
+                  : "Type text above to create clips"}
+              </p>
+              <p className="text-[11px] text-slate-500">
+                {rawText.trim()
+                  ? "Click the button to generate audio segments and pick voices below"
+                  : "Or click a sample button below to try a demo script"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              id="btn-create-segments-primary"
+              type="button"
+              onClick={() => {
+                handleSplitText();
+                setTimeout(() => {
+                  segmentsListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }, 60);
+              }}
+              disabled={!rawText.trim()}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:bg-slate-300 text-white text-xs font-bold transition shadow-sm hover:shadow-md active:scale-95 cursor-pointer disabled:cursor-not-allowed"
+            >
+              <Split className="h-4 w-4" />
+              <span>
+                {items.length > 0 ? "Update Audio Clips" : "Create Audio Clips"}
+                {detectedCount > 0 ? ` (${detectedCount})` : ""} ➔
+              </span>
+            </button>
+
+            {items.length > 0 && (
+              <button
+                id="btn-jump-to-segments"
+                type="button"
+                onClick={() => {
+                  segmentsListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-purple-200 bg-white hover:bg-purple-50 text-purple-700 text-xs font-semibold transition cursor-pointer"
+                title="Jump down to view clips"
+              >
+                <ArrowDown className="h-3.5 w-3.5 text-purple-600" />
+                <span>View Clips</span>
+              </button>
+            )}
+          </div>
+        </div>
 
         {/* Quick Sample Presets & Status Feedback */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
           <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-            <span className="text-slate-400 font-semibold">Quick Samples:</span>
+            <span className="text-slate-400 font-semibold">Try Quick Sample:</span>
             <button
               type="button"
               onClick={() => {
                 setRawText(SAMPLE_SENTENCES);
                 handleSelectModeAndSplit("sentences");
               }}
-              className="px-2 py-0.5 rounded-md border border-slate-200 bg-slate-50 hover:bg-purple-50 hover:border-purple-200 hover:text-purple-700 text-slate-600 transition cursor-pointer"
+              className="px-2.5 py-1 rounded-md border border-slate-200 bg-slate-50 hover:bg-purple-50 hover:border-purple-200 hover:text-purple-700 text-slate-600 transition cursor-pointer font-medium"
             >
               Paragraph (5 Sentences)
             </button>
@@ -655,7 +803,7 @@ ivr_menu.wav,Zephyr,"All of our agents are currently assisting other callers.",c
                 setRawText(SAMPLE_DIALOGUE);
                 handleSelectModeAndSplit("lines");
               }}
-              className="px-2 py-0.5 rounded-md border border-slate-200 bg-slate-50 hover:bg-purple-50 hover:border-purple-200 hover:text-purple-700 text-slate-600 transition cursor-pointer"
+              className="px-2.5 py-1 rounded-md border border-slate-200 bg-slate-50 hover:bg-purple-50 hover:border-purple-200 hover:text-purple-700 text-slate-600 transition cursor-pointer font-medium"
             >
               Dialogue (4 Lines)
             </button>
@@ -667,17 +815,17 @@ ivr_menu.wav,Zephyr,"All of our agents are currently assisting other callers.",c
                   setItems([]);
                   setSplitFeedback("Text cleared.");
                 }}
-                className="px-2 py-0.5 rounded-md border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 text-slate-500 transition cursor-pointer flex items-center gap-1"
+                className="px-2.5 py-1 rounded-md border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 text-slate-500 transition cursor-pointer flex items-center gap-1"
               >
                 <Trash2 className="h-3 w-3" />
-                <span>Clear</span>
+                <span>Clear Text</span>
               </button>
             )}
           </div>
 
           {splitFeedback && (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-50 border border-purple-200 text-purple-700 text-xs font-semibold">
-              <Check className="h-3.5 w-3.5 text-purple-600" />
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
+              <Check className="h-3.5 w-3.5 text-emerald-600" />
               <span>{splitFeedback}</span>
             </div>
           )}
@@ -686,32 +834,62 @@ ivr_menu.wav,Zephyr,"All of our agents are currently assisting other callers.",c
 
       {/* Batch Items List with Per-Row Voice & Style Assignment */}
       {items.length > 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+        <div
+          ref={segmentsListRef}
+          id="batch-segments-section"
+          className="rounded-2xl border-2 border-purple-200/80 bg-white p-5 shadow-xs space-y-4"
+        >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-slate-900">
-                Batch Segments ({items.length})
-              </h3>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 font-semibold border border-purple-200">
-                {completedCount} Ready
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-600 text-xs font-bold text-white shadow-2xs">
+                2
               </span>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <span>Step 2: Assign Voices &amp; Generate Audio</span>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 font-semibold border border-purple-200">
+                    {completedCount}/{items.length} Ready
+                  </span>
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Select voice and speaking style for each line, then click "Generate All Clips" or convert individually.
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 text-xs">
               {/* Set all to voice */}
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-500 text-[11px]">Set All:</span>
+                <span className="text-slate-500 text-[11px] font-semibold">Set All Voice:</span>
                 <select
+                  id="select-bulk-voice"
                   value={bulkVoiceTarget}
                   onChange={(e) => {
                     setBulkVoiceTarget(e.target.value);
                     handleSetAllVoices(e.target.value);
                   }}
-                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 cursor-pointer"
+                  className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-700 cursor-pointer shadow-2xs hover:border-purple-400 focus:border-purple-600 focus:outline-none max-w-[200px]"
                 >
-                  {voices.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.name} ({v.gender})
+                  {renderVoiceOptions()}
+                </select>
+              </div>
+
+              {/* Set all to style */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-500 text-[11px] font-semibold">Set All Style:</span>
+                <select
+                  id="select-bulk-style"
+                  value={bulkStyleTarget}
+                  onChange={(e) => {
+                    const newS = e.target.value;
+                    setBulkStyleTarget(newS);
+                    handleSetAllStyles(newS);
+                  }}
+                  className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 cursor-pointer shadow-2xs hover:border-purple-400 focus:border-purple-600 focus:outline-none max-w-[160px]"
+                >
+                  {availableStyles.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name || (s as any).label || s.id}
                     </option>
                   ))}
                 </select>
@@ -750,92 +928,129 @@ ivr_menu.wav,Zephyr,"All of our agents are currently assisting other callers.",c
 
           {/* Rows List */}
           <div className="space-y-2.5 max-h-[480px] overflow-y-auto pr-1">
-            {items.map((item, idx) => (
-              <div
-                key={item.id}
-                className={`p-3.5 rounded-xl border transition flex flex-col md:flex-row md:items-center justify-between gap-3 ${
-                  item.status === "ready"
-                    ? "bg-emerald-50/40 border-emerald-200"
-                    : item.status === "generating"
-                    ? "bg-purple-50/40 border-purple-200 animate-pulse"
-                    : "bg-slate-50/70 border-slate-200"
-                }`}
-              >
-                {/* File info & Text */}
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-700">
-                      #{idx + 1}
-                    </span>
-                    <input
-                      type="text"
-                      value={item.filename || `clip_${idx + 1}.wav`}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setItems((prev) =>
-                          prev.map((it) => (it.id === item.id ? { ...it, filename: val } : it))
-                        );
-                      }}
-                      className="text-[11px] font-mono text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-purple-600 focus:outline-none max-w-[160px]"
-                      placeholder="filename.wav"
-                    />
-                    {item.duration && (
-                      <span className="text-[10px] font-semibold text-slate-400">
-                        {item.duration.toFixed(1)}s
+            {items.map((item, idx) => {
+              const currentVoice = voices.find((v) => v.id === item.voice) || voices[0];
+              const currentStyle = availableStyles.find((s) => s.id === item.style) || availableStyles[0];
+              const genderCat = currentVoice ? getVoiceGenderCategory(currentVoice.gender) : "Neutral";
+
+              return (
+                <div
+                  key={item.id}
+                  className={`p-3.5 rounded-xl border transition flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 ${
+                    item.status === "ready"
+                      ? "bg-emerald-50/40 border-emerald-200"
+                      : item.status === "generating"
+                      ? "bg-purple-50/40 border-purple-200 animate-pulse"
+                      : "bg-slate-50/70 border-slate-200"
+                  }`}
+                >
+                  {/* File info & Text */}
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-700">
+                        #{idx + 1}
                       </span>
-                    )}
+                      <input
+                        type="text"
+                        value={item.filename || `clip_${idx + 1}.wav`}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setItems((prev) =>
+                            prev.map((it) => (it.id === item.id ? { ...it, filename: val } : it))
+                          );
+                        }}
+                        className="text-[11px] font-mono text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-purple-600 focus:outline-none max-w-[160px]"
+                        placeholder="filename.wav"
+                      />
+                      {item.duration && (
+                        <span className="text-[10px] font-semibold text-slate-400">
+                          {item.duration.toFixed(1)}s
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-slate-800 font-medium leading-relaxed">
+                      {item.text}
+                    </p>
                   </div>
 
-                  <p className="text-xs text-slate-800 font-medium leading-relaxed">
-                    {item.text}
-                  </p>
-                </div>
+                  {/* Controls & Action Buttons */}
+                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 shrink-0">
+                    {/* Per-Row Voice & Style Controls & Badges */}
+                    <div className="flex flex-col gap-1.5 shrink-0 w-full sm:w-auto">
+                      <div className="flex items-center gap-2">
+                        {/* Voice Selector */}
+                        <div className="relative">
+                          <select
+                            id={`select-voice-${item.id}`}
+                            value={item.voice}
+                            onChange={(e) => {
+                              const newV = e.target.value;
+                              setItems((prev) =>
+                                prev.map((it) =>
+                                  it.id === item.id
+                                    ? { ...it, voice: newV, status: it.status === "ready" ? "idle" : it.status }
+                                    : it
+                                )
+                              );
+                            }}
+                            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:border-purple-400 focus:border-purple-600 focus:outline-none cursor-pointer min-w-[170px] max-w-[220px]"
+                            title={currentVoice ? `${currentVoice.name} (${currentVoice.gender} • ${currentVoice.tone})` : item.voice}
+                          >
+                            {renderVoiceOptions()}
+                          </select>
+                        </div>
 
-                {/* Per-Row Voice & Style Controls */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <select
-                    value={item.voice}
-                    onChange={(e) => {
-                      const newV = e.target.value;
-                      setItems((prev) =>
-                        prev.map((it) =>
-                          it.id === item.id
-                            ? { ...it, voice: newV, status: it.status === "ready" ? "idle" : it.status }
-                            : it
-                        )
-                      );
-                    }}
-                    className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 cursor-pointer max-w-[120px]"
-                  >
-                    {voices.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.name}
-                      </option>
-                    ))}
-                  </select>
+                        {/* Speaking Style Selector */}
+                        <div className="relative">
+                          <select
+                            id={`select-style-${item.id}`}
+                            value={item.style}
+                            onChange={(e) => {
+                              const newS = e.target.value;
+                              setItems((prev) =>
+                                prev.map((it) =>
+                                  it.id === item.id
+                                    ? { ...it, style: newS, status: it.status === "ready" ? "idle" : it.status }
+                                    : it
+                                )
+                              );
+                            }}
+                            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-2xs hover:border-purple-400 focus:border-purple-600 focus:outline-none cursor-pointer min-w-[140px] max-w-[190px]"
+                            title={currentStyle ? `Speaking Style: ${currentStyle.name || currentStyle.id}` : "Speaking Style"}
+                          >
+                            {availableStyles.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.name || (s as any).label || s.id}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
 
-                  {styles && (
-                    <select
-                      value={item.style}
-                      onChange={(e) => {
-                        const newS = e.target.value;
-                        setItems((prev) =>
-                          prev.map((it) =>
-                            it.id === item.id
-                              ? { ...it, style: newS, status: it.status === "ready" ? "idle" : it.status }
-                              : it
-                          )
-                        );
-                      }}
-                      className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 cursor-pointer max-w-[100px]"
-                    >
-                      {styles.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.label}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                      {/* Informative Gender & Tone Chip so clients identify voice characteristics at a glance */}
+                      {currentVoice && (
+                        <div className="flex items-center gap-1.5 text-[10px] pl-0.5">
+                          <span
+                            className={`px-1.5 py-0.5 rounded font-bold shrink-0 ${
+                              genderCat === "Female"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                : genderCat === "Male"
+                                ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                : "bg-purple-50 text-purple-700 border border-purple-200"
+                            }`}
+                          >
+                            {currentVoice.gender}
+                          </span>
+                          <span
+                            className="text-slate-500 font-medium truncate max-w-[220px]"
+                            title={currentVoice.tone}
+                          >
+                            Tone: {getVoiceToneSummary(currentVoice.tone)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
 
                   {/* Actions */}
                   {item.status === "ready" ? (
@@ -898,7 +1113,8 @@ ivr_menu.wav,Zephyr,"All of our agents are currently assisting other callers.",c
                   </button>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       )}

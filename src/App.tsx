@@ -617,11 +617,14 @@ export default function App() {
       });
   }, []);
 
-  // Listen to Firebase Auth state changes & test firestore connection
+  // Listen to Firebase Auth state changes & trigger Google register/login popup for new visitors
   useEffect(() => {
     testFirestoreConnection();
 
+    let hasCheckedAuth = false;
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      hasCheckedAuth = true;
       if (firebaseUser) {
         try {
           const profile = await fetchOrCreateProfile(firebaseUser);
@@ -635,10 +638,43 @@ export default function App() {
         }
       } else {
         setCurrentUser(null);
+        // Automatically display Google register/login popup on initial visit for new/unauthenticated users
+        try {
+          const alreadyPrompted = sessionStorage.getItem("voxify_auth_prompt_shown");
+          if (!alreadyPrompted) {
+            sessionStorage.setItem("voxify_auth_prompt_shown", "true");
+            setTimeout(() => {
+              setAuthModalMode("register");
+              setIsAuthModalOpen(true);
+            }, 600);
+          }
+        } catch {
+          setTimeout(() => {
+            setAuthModalMode("register");
+            setIsAuthModalOpen(true);
+          }, 600);
+        }
       }
     });
 
-    return () => unsubscribe();
+    // Fallback timer: if Firebase auth resolution is delayed, prompt unauthenticated new visitor
+    const fallbackTimer = setTimeout(() => {
+      if (!hasCheckedAuth && !auth.currentUser) {
+        try {
+          const alreadyPrompted = sessionStorage.getItem("voxify_auth_prompt_shown");
+          if (!alreadyPrompted) {
+            sessionStorage.setItem("voxify_auth_prompt_shown", "true");
+            setAuthModalMode("register");
+            setIsAuthModalOpen(true);
+          }
+        } catch {}
+      }
+    }, 1200);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(fallbackTimer);
+    };
   }, []);
 
   // Handle returning from live Stripe checkout session
@@ -1022,9 +1058,12 @@ export default function App() {
   };
 
   const handleClearHistory = () => {
-    if (window.confirm("Are you sure you want to clear your speech history?")) {
-      setTakes([]);
-      setCurrentTakeId(null);
+    setTakes([]);
+    setCurrentTakeId(null);
+    try {
+      localStorage.removeItem("ai_studio_voice_takes");
+    } catch {
+      // ignore
     }
   };
 
@@ -1404,6 +1443,7 @@ export default function App() {
             ) : (
               <div className="flex items-center gap-1.5 pl-1 border-l border-slate-200">
                 <button
+                  id="btn-nav-signin"
                   type="button"
                   onClick={() => {
                     setAuthModalMode("login");
@@ -1414,6 +1454,7 @@ export default function App() {
                   Sign In
                 </button>
                 <button
+                  id="btn-nav-register"
                   type="button"
                   onClick={() => {
                     setAuthModalMode("register");
@@ -2383,7 +2424,12 @@ export default function App() {
       {/* Client Authentication Modal (Login / Register) */}
       <AuthModal
         isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+        onClose={() => {
+          setIsAuthModalOpen(false);
+          try {
+            sessionStorage.setItem("voxify_auth_prompt_shown", "true");
+          } catch {}
+        }}
         initialMode={authModalMode}
         onAuthSuccess={(profile) => {
           setCurrentUser(profile);

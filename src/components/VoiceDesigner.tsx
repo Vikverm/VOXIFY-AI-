@@ -82,19 +82,313 @@ interface ArchetypePreset {
   prompt: string;
 }
 
-const ACCENT_OPTIONS = [
-  { id: "us", name: "American (General)", flag: "🇺🇸" },
-  { id: "uk", name: "British (RP)", flag: "🇬🇧" },
-  { id: "in", name: "Indian English", flag: "🇮🇳" },
-  { id: "au", name: "Australian", flag: "🇦🇺" },
-  { id: "ca", name: "Canadian", flag: "🇨🇦" },
-  { id: "es", name: "Spanish / Castilian", flag: "🇪🇸" },
-  { id: "fr", name: "French Accent", flag: "🇫🇷" },
-  { id: "de", name: "German Accent", flag: "🇩🇪" },
-  { id: "jp", name: "Japanese English", flag: "🇯🇵" },
-  { id: "it", name: "Italian Accent", flag: "🇮🇹" },
-  { id: "br", name: "Brazilian Accent", flag: "🇧🇷" },
+export interface LanguageAndAccentOption {
+  id: string;
+  name: string;
+  nativeName: string;
+  flag: string;
+  category: string;
+  langCode: string;
+  samplePhrase: string;
+  dialectPrompt?: string;
+}
+
+export const LANGUAGE_AND_ACCENT_OPTIONS: LanguageAndAccentOption[] = [
+  // 🌐 English Regional Accents & Dialects
+  {
+    id: "in",
+    name: "Indian English",
+    nativeName: "Indian English",
+    flag: "🇮🇳",
+    category: "English Accents & Dialects",
+    langCode: "en",
+    samplePhrase: "Welcome to the studio! Here is a natural preview of this custom voice profile with authentic Indian cadence.",
+    dialectPrompt: "with authentic, clear Indian English cadence and natural inflection",
+  },
+  {
+    id: "us",
+    name: "American English",
+    nativeName: "English (US)",
+    flag: "🇺🇸",
+    category: "English Accents & Dialects",
+    langCode: "en",
+    samplePhrase: "Welcome to the studio! This is a real-time preview of my custom vocal profile. How does my tone sound?",
+    dialectPrompt: "with clear American English pronunciation",
+  },
+  {
+    id: "uk",
+    name: "British English (RP)",
+    nativeName: "British English",
+    flag: "🇬🇧",
+    category: "English Accents & Dialects",
+    langCode: "en",
+    samplePhrase: "Welcome to the voice laboratory. Listen closely to the crisp diction and natural cadence of this voice.",
+    dialectPrompt: "with authentic British RP accent and refined diction",
+  },
+  {
+    id: "au",
+    name: "Australian English",
+    nativeName: "Australian English",
+    flag: "🇦🇺",
+    category: "English Accents & Dialects",
+    langCode: "en",
+    samplePhrase: "G'day and welcome to the studio! Check out the natural tone and warm acoustics of this voice.",
+    dialectPrompt: "with natural Australian English accent and friendly cadence",
+  },
+  {
+    id: "ca",
+    name: "Canadian English",
+    nativeName: "Canadian English",
+    flag: "🇨🇦",
+    category: "English Accents & Dialects",
+    langCode: "en",
+    samplePhrase: "Welcome to the voice designer. Hear your words come alive with clear, warm articulation.",
+    dialectPrompt: "with natural Canadian English accent",
+  },
+  {
+    id: "ie",
+    name: "Irish English",
+    nativeName: "Irish English",
+    flag: "🇮🇪",
+    category: "English Accents & Dialects",
+    langCode: "en",
+    samplePhrase: "Welcome to the sound studio. Listen to the melodic rhythm and warmth of this vocal persona.",
+    dialectPrompt: "with warm Irish English melodic cadence",
+  },
+
+  // 🇮🇳 Indian Languages (भारतीय भाषाएं)
+  {
+    id: "hi",
+    name: "Hindi",
+    nativeName: "हिन्दी",
+    flag: "🇮🇳",
+    category: "Indian Languages (भारतीय भाषाएं)",
+    langCode: "hi",
+    samplePhrase: "नमस्ते और एआई वॉइस स्टूडियो में आपका स्वागत है। अपनी आवाज़ को प्राकृतिक पिच और गति के साथ अनुभव करें।",
+  },
+  {
+    id: "bn",
+    name: "Bengali",
+    nativeName: "বাংলা",
+    flag: "🇧🇩",
+    category: "Indian Languages (भारतीय भाषाएं)",
+    langCode: "bn",
+    samplePhrase: "এআই ভয়েস স্টুডিওতে স্বাগতম। স্বাভাবিক উচ্চারণ ও সুরের সাথে আপনার কণ্ঠ উপভোগ করুন।",
+  },
+  {
+    id: "ta",
+    name: "Tamil",
+    nativeName: "தமிழ்",
+    flag: "🇮🇳",
+    category: "Indian Languages (भारतीय भाषाएं)",
+    langCode: "ta",
+    samplePhrase: "AI குரல் ஸ்டுடியோவிற்கு வரவேற்கிறோம். இயல்பான குரல் மற்றும் துல்லியமான உச்சரிப்பை உணருங்கள்.",
+  },
+  {
+    id: "te",
+    name: "Telugu",
+    nativeName: "తెలుగు",
+    flag: "🇮🇳",
+    category: "Indian Languages (भारतीय भाषाएं)",
+    langCode: "te",
+    samplePhrase: "AI వాయిస్ స్టూడియోకి స్వాగతం. స్పష్టమైన ఉచ్ఛారణ మరియు సహజమైన స్వరంతో వినండి.",
+  },
+  {
+    id: "mr",
+    name: "Marathi",
+    nativeName: "मराठी",
+    flag: "🇮🇳",
+    category: "Indian Languages (भारतीय भाषाएं)",
+    langCode: "mr",
+    samplePhrase: "एआय व्हॉईस स्टुडिओमध्ये आपले स्वागत आहे. नैसर्गिक उच्चार आणि स्पष्ट आवाजाचा अनुभव घ्या.",
+  },
+  {
+    id: "ur",
+    name: "Urdu",
+    nativeName: "اردو",
+    flag: "🇵🇰",
+    category: "Indian Languages (भारतीय भाषाएं)",
+    langCode: "ur",
+    samplePhrase: "اے آئی وائس اسٹوڈیو میں خوش آمدید۔ قدرتی لہجے اور شاندار تلفظ کے ساتھ آواز کا تجربہ کریں۔",
+  },
+
+  // 🇪🇺 European Languages
+  {
+    id: "es",
+    name: "Spanish",
+    nativeName: "Español",
+    flag: "🇪🇸",
+    category: "European Languages",
+    langCode: "es",
+    samplePhrase: "¡Hola a todos! Bienvenidos a nuestro estudio de voz impulsado por inteligencia artificial con entonación natural.",
+  },
+  {
+    id: "fr",
+    name: "French",
+    nativeName: "Français",
+    flag: "🇫🇷",
+    category: "European Languages",
+    langCode: "fr",
+    samplePhrase: "Bonjour et bienvenue dans notre studio vocal d'intelligence artificielle avec une diction fluide et naturelle.",
+  },
+  {
+    id: "de",
+    name: "German",
+    nativeName: "Deutsch",
+    flag: "🇩🇪",
+    category: "European Languages",
+    langCode: "de",
+    samplePhrase: "Willkommen im Sprachstudio. Erleben Sie lebendige, ausdrucksstarke Stimmen mit individueller Tonhöhe und Sprechgeschwindigkeit.",
+  },
+  {
+    id: "it",
+    name: "Italian",
+    nativeName: "Italiano",
+    flag: "🇮🇹",
+    category: "European Languages",
+    langCode: "it",
+    samplePhrase: "Benvenuti nel nostro studio vocale basato su intelligenza artificiale, con cadenza melodica e naturale.",
+  },
+  {
+    id: "pt",
+    name: "Portuguese",
+    nativeName: "Português (Brasil)",
+    flag: "🇧🇷",
+    category: "European Languages",
+    langCode: "pt",
+    samplePhrase: "Olá e bem-vindo ao estúdio de voz com tecnologia de ponta, trazendo entonação suave e expressiva.",
+  },
+  {
+    id: "br",
+    name: "Brazilian Portuguese",
+    nativeName: "Português (Brasil)",
+    flag: "🇧🇷",
+    category: "European Languages",
+    langCode: "pt",
+    samplePhrase: "Olá e bem-vindo ao estúdio de voz com tecnologia de ponta, trazendo entonação suave e expressiva.",
+  },
+  {
+    id: "nl",
+    name: "Dutch",
+    nativeName: "Nederlands",
+    flag: "🇳🇱",
+    category: "European Languages",
+    langCode: "nl",
+    samplePhrase: "Welkom bij de AI Voice Studio. Ervaar natuurlijke spraaksynthese met heldere uitspraak en intonatie.",
+  },
+  {
+    id: "ru",
+    name: "Russian",
+    nativeName: "Русский",
+    flag: "🇷🇺",
+    category: "European Languages",
+    langCode: "ru",
+    samplePhrase: "Добро пожаловать в студию искусственного интеллекта. Оцените выразительное и естественное звучание голоса.",
+  },
+  {
+    id: "tr",
+    name: "Turkish",
+    nativeName: "Türkçe",
+    flag: "🇹🇷",
+    category: "European Languages",
+    langCode: "tr",
+    samplePhrase: "Yapay zeka ses stüdyomuza hoş geldiniz. Doğal tonlama ve akıcı diksiyonla seslendirmenizi dinleyin.",
+  },
+  {
+    id: "pl",
+    name: "Polish",
+    nativeName: "Polski",
+    flag: "🇵🇱",
+    category: "European Languages",
+    langCode: "pl",
+    samplePhrase: "Witamy w studiu syntezy mowy AI. Odkryj czystą intonację i naturalny rytm ludzkiego głosu.",
+  },
+  {
+    id: "sv",
+    name: "Swedish",
+    nativeName: "Svenska",
+    flag: "🇸🇪",
+    category: "European Languages",
+    langCode: "sv",
+    samplePhrase: "Välkommen till AI Voice Studio. Upplev naturligt tal med personlig tonhöjd och rytm.",
+  },
+
+  // 🌏 Asian & Middle Eastern Languages
+  {
+    id: "ja",
+    name: "Japanese",
+    nativeName: "日本語",
+    flag: "🇯🇵",
+    category: "Asian & Middle Eastern Languages",
+    langCode: "ja",
+    samplePhrase: "AI音声スタジオへようこそ。自然なイントネーションと抑揚で、あなたのテキストを生き生きと読み上げます。",
+  },
+  {
+    id: "jp",
+    name: "Japanese English",
+    nativeName: "Japanese English",
+    flag: "🇯🇵",
+    category: "Asian & Middle Eastern Languages",
+    langCode: "ja",
+    samplePhrase: "AI音声スタジオへようこそ。自然なイントネーションと抑揚で、あなたのテキストを生き生きと読み上げます。",
+  },
+  {
+    id: "zh",
+    name: "Chinese Mandarin",
+    nativeName: "中文 (普通话)",
+    flag: "🇨🇳",
+    category: "Asian & Middle Eastern Languages",
+    langCode: "zh",
+    samplePhrase: "欢迎使用智能语音工作室。体验自然流畅的语调与生动传神的语音合成。",
+  },
+  {
+    id: "ko",
+    name: "Korean",
+    nativeName: "한국어",
+    flag: "🇰🇷",
+    category: "Asian & Middle Eastern Languages",
+    langCode: "ko",
+    samplePhrase: "AI 보이스 스튜디오에 오신 것을 환영합니다. 자연스러운 억양과 생생한 음성을 경험해보세요.",
+  },
+  {
+    id: "ar",
+    name: "Arabic",
+    nativeName: "العربية",
+    flag: "🇸🇦",
+    category: "Asian & Middle Eastern Languages",
+    langCode: "ar",
+    samplePhrase: "أهلاً بكم في استودیو الصوت بالذكاء الاصطناعي، بنبرة طبيعية وإلقاء متقن ومميز.",
+  },
+  {
+    id: "vi",
+    name: "Vietnamese",
+    nativeName: "Tiếng Việt",
+    flag: "🇻🇳",
+    category: "Asian & Middle Eastern Languages",
+    langCode: "vi",
+    samplePhrase: "Chào mừng bạn đến với phòng thu giọng nói AI. Trải nghiệm phát âm tự nhiên và truyền cảm.",
+  },
+  {
+    id: "id",
+    name: "Indonesian",
+    nativeName: "Bahasa Indonesia",
+    flag: "🇮🇩",
+    category: "Asian & Middle Eastern Languages",
+    langCode: "id",
+    samplePhrase: "Selamat datang di AI Voice Studio. Nikmati sintesis suara yang jernih dan berintonasi alami.",
+  },
 ];
+
+export const ACCENT_OPTIONS = LANGUAGE_AND_ACCENT_OPTIONS;
+
+export const GROUPED_LANGUAGES_AND_ACCENTS = LANGUAGE_AND_ACCENT_OPTIONS.reduce(
+  (acc, opt) => {
+    if (!acc[opt.category]) acc[opt.category] = [];
+    acc[opt.category].push(opt);
+    return acc;
+  },
+  {} as Record<string, LanguageAndAccentOption[]>
+);
 
 const ARCHETYPE_PRESETS: ArchetypePreset[] = [
   {
@@ -327,6 +621,8 @@ export const VoiceDesigner: React.FC<VoiceDesignerProps> = ({
   const [gender, setGender] = useState("Deep Male");
   const [age, setAge] = useState<"child" | "young-adult" | "mature" | "senior">("young-adult");
   const [accent, setAccent] = useState("in");
+  const currentAccentOption =
+    LANGUAGE_AND_ACCENT_OPTIONS.find((a) => a.id === accent) || LANGUAGE_AND_ACCENT_OPTIONS[0];
   const [baseVoice, setBaseVoice] = useState("Charon");
   const [pitchSemitones, setPitchSemitones] = useState<number>(-3);
   const [speedMultiplier, setSpeedMultiplier] = useState<number>(1.0);
@@ -585,9 +881,18 @@ export const VoiceDesigner: React.FC<VoiceDesignerProps> = ({
       else if (speedMultiplier >= 1.3) mappedSpeed = "very-fast";
       else if (speedMultiplier > 1.05) mappedSpeed = "fast";
 
-      const stylePrompt = promptDescription
+      const selectedOption =
+        LANGUAGE_AND_ACCENT_OPTIONS.find((o) => o.id === accent) || LANGUAGE_AND_ACCENT_OPTIONS[0];
+      const effectiveLanguage = selectedOption ? selectedOption.langCode : "en";
+      const dialectInstruction = selectedOption?.dialectPrompt || "";
+
+      let stylePrompt = promptDescription
         ? `${promptDescription}. Deliver with ${warmth > 75 ? "deep acoustic warmth and chest resonance" : "modern neutral clarity"}, ${clarity > 80 ? "pristine studio articulation" : "conversational flow"}, and ${breathiness > 30 ? "soft breath airiness" : "confident projection"}.`
-        : "natural";
+        : `Deliver with ${warmth > 75 ? "warm, resonant chest tone" : "crisp modern clarity"} and ${breathiness > 30 ? "soft intimate breath" : "focused projection"}.`;
+
+      if (dialectInstruction) {
+        stylePrompt = `${stylePrompt} Speak ${dialectInstruction}.`;
+      }
 
       const res = await fetch("/api/tts/generate", {
         method: "POST",
@@ -600,16 +905,7 @@ export const VoiceDesigner: React.FC<VoiceDesignerProps> = ({
           pitchSemitones,
           speedMultiplier,
           style: stylePrompt,
-          language:
-            accent === "es"
-              ? "es"
-              : accent === "fr"
-              ? "fr"
-              : accent === "de"
-              ? "de"
-              : accent === "jp"
-              ? "ja"
-              : "en",
+          language: effectiveLanguage,
         }),
       });
 
@@ -877,7 +1173,7 @@ export const VoiceDesigner: React.FC<VoiceDesignerProps> = ({
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-base">{preset.avatarIcon}</span>
                     <span className={`text-[9px] px-1 py-0.2 rounded font-bold uppercase ${colorObj.bg} ${colorObj.text}`}>
-                      {preset.accent.toUpperCase()}
+                      {LANGUAGE_AND_ACCENT_OPTIONS.find((a) => a.id === preset.accent)?.flag || ""} {preset.accent.toUpperCase()}
                     </span>
                   </div>
                   <div>
@@ -1101,20 +1397,66 @@ export const VoiceDesigner: React.FC<VoiceDesignerProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                      Accent & Regional Dialect
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold text-slate-800">
+                        Language & Regional Dialect
+                      </label>
+                      <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+                        {LANGUAGE_AND_ACCENT_OPTIONS.length} Languages & Accents
+                      </span>
+                    </div>
                     <select
+                      id="voice-designer-language-select"
                       value={accent}
-                      onChange={(e) => setAccent(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs font-bold text-slate-900 focus:bg-white focus:border-indigo-600 focus:outline-none cursor-pointer transition shadow-2xs"
+                      onChange={(e) => {
+                        const nextId = e.target.value;
+                        setAccent(nextId);
+                        const selectedOpt = LANGUAGE_AND_ACCENT_OPTIONS.find((a) => a.id === nextId);
+                        if (
+                          selectedOpt &&
+                          selectedOpt.samplePhrase &&
+                          (selectedScriptId.startsWith("lang_") || selectedScriptId === "welcome")
+                        ) {
+                          setTestPhrase(selectedOpt.samplePhrase);
+                          setSelectedScriptId(`lang_${selectedOpt.id}`);
+                        }
+                      }}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 focus:outline-none cursor-pointer transition shadow-2xs"
                     >
-                      {ACCENT_OPTIONS.map((acc) => (
-                        <option key={acc.id} value={acc.id}>
-                          {acc.flag} {acc.name}
-                        </option>
+                      {Object.entries(GROUPED_LANGUAGES_AND_ACCENTS).map(([groupCategory, options]) => (
+                        <optgroup key={groupCategory} label={groupCategory} className="font-bold text-slate-800 bg-slate-100">
+                          {options.map((acc) => (
+                            <option key={acc.id} value={acc.id} className="font-medium text-slate-800 bg-white">
+                              {acc.flag} {acc.name} ({acc.nativeName})
+                            </option>
+                          ))}
+                        </optgroup>
                       ))}
                     </select>
+
+                    {/* Selected Dialect details & 1-click test phrase button */}
+                    {currentAccentOption && (
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-slate-600 bg-indigo-50/50 border border-indigo-100 rounded-xl px-3 py-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm">{currentAccentOption.flag}</span>
+                          <span className="font-bold text-slate-900">{currentAccentOption.name}</span>
+                          <span className="text-slate-500 font-medium">({currentAccentOption.nativeName})</span>
+                        </div>
+                        {currentAccentOption.samplePhrase && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTestPhrase(currentAccentOption.samplePhrase);
+                              setSelectedScriptId(`lang_${currentAccentOption.id}`);
+                            }}
+                            className="text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer underline decoration-indigo-300 hover:decoration-indigo-600 text-[11px] flex items-center gap-1"
+                          >
+                            <span>Load {currentAccentOption.name} test phrase</span>
+                            <span>➔</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1544,7 +1886,7 @@ export const VoiceDesigner: React.FC<VoiceDesignerProps> = ({
               audioUrl={auditionAudioUrl}
               audioBase64={auditionAudioBase64}
               title={`Audition: ${voiceName.trim() || "Custom Persona"}`}
-              subtitle={`${baseVoice} • ${gender} • ${accent.toUpperCase()} • ${pitchSemitones >= 0 ? `+${pitchSemitones}` : pitchSemitones}st pitch • ${speedMultiplier}x speed`}
+              subtitle={`${baseVoice} • ${gender} • ${currentAccentOption.flag} ${currentAccentOption.name} • ${pitchSemitones >= 0 ? `+${pitchSemitones}` : pitchSemitones}st pitch • ${speedMultiplier}x speed`}
               accentColor="indigo"
               initialAutoPlay={true}
             />
@@ -1665,7 +2007,7 @@ export const VoiceDesigner: React.FC<VoiceDesignerProps> = ({
                               </span>
                             </div>
                             <div className="text-[10px] text-slate-500 mt-0.5">
-                              Base: {cv.baseVoice} • {cv.pitchSemitones > 0 ? `+${cv.pitchSemitones}` : cv.pitchSemitones}st • {cv.speedMultiplier}x
+                              Base: {cv.baseVoice} • {LANGUAGE_AND_ACCENT_OPTIONS.find((a) => a.id === cv.accent)?.flag || "🌐"} {LANGUAGE_AND_ACCENT_OPTIONS.find((a) => a.id === cv.accent)?.name || cv.accent.toUpperCase()} • {cv.pitchSemitones > 0 ? `+${cv.pitchSemitones}` : cv.pitchSemitones}st • {cv.speedMultiplier}x
                             </div>
                           </div>
                         </div>
